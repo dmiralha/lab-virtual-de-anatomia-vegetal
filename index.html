@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anatomia Vegetal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #faf9f6; color: #2d3748; }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 400px; }
+        }
+
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active { background-color: #065f46; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: #065f46; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .cell-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+        .tissue-cell { height: 40px; transition: background-color 0.5s ease; border-radius: 4px; }
+        
+        .stoma-container {
+            display: flex; justify-content: center; align-items: center; position: relative;
+            width: 200px; height: 150px; background-color: #e2e8f0; border-radius: 20px; border: 4px solid #cbd5e1;
+        }
+        .guard-cell {
+            width: 80px; height: 120px; border: 12px solid #22c55e; border-radius: 50px;
+            display: flex; justify-content: center; align-items: center; background-color: transparent;
+        }
+        .ostiole { width: 8px; height: 60px; background-color: #faf9f6; border-radius: 10px; }
+        .subsidiary-cell { position: absolute; background-color: #86efac; opacity: 0.4; border-radius: 20px; z-index: 0; }
+        .guard-cell { z-index: 10; position: relative; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+<!-- Chosen Palette: Warm Neutrals & Botanical Greens (Background: #faf9f6 Stone, Primary: #065f46 Emerald, Accents: #9333ea Purple, #0284c7 Sky Blue, #e11d48 Rose) -->
+<!-- Application Structure Plan: The SPA uses a "Virtual Lab Bench" dashboard approach with 4 distinct tabs (Epidermis, Stem/Techniques, Leaf, Study Guide). This structure breaks down the sequential lab script into functional modules, allowing users to jump directly to the technique simulator or the structural diagrams without scrolling through a massive document. It prioritizes interactive exploration of microscopic concepts before testing knowledge. -->
+<!-- Visualization & Content Choices: Report Info -> Lab practical steps & anatomical structures. Goal -> Teach visual differentiation of cell walls and histological techniques. Viz/Presentation Method -> Interactive CSS cell simulators, dynamic text updates, and a Chart.js Radar Chart. Interaction -> Toggling dyes to see color changes on a simulated tissue grid, clicking stoma parts for definitions, tab navigation. Justification -> Simulates the actual laboratory experience of adding dyes to slides and looking through a microscope lens, increasing engagement far beyond static text. Library/Method -> Vanilla JS, Tailwind CSS, Chart.js (NO SVG/Mermaid used). -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<nav class="bg-emerald-800 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            <div class="flex-shrink-0 flex items-center gap-2">
+                <span class="text-2xl">🔬</span>
+                <span class="font-bold text-xl tracking-tight">Lab. Virtual de Anatomia Vegetal</span>
+            </div>
+            <div class="hidden md:flex space-x-2">
+                <button onclick="navigate('epiderme')" id="nav-epiderme" class="tab-btn active px-4 py-2 rounded-md text-sm font-medium border border-emerald-600 hover:bg-emerald-700">Epiderme e Anexos</button>
+                <button onclick="navigate('caule')" id="nav-caule" class="tab-btn px-4 py-2 rounded-md text-sm font-medium border border-emerald-600 hover:bg-emerald-700 text-emerald-100">Caule e Técnicas</button>
+                <button onclick="navigate('folha')" id="nav-folha" class="tab-btn px-4 py-2 rounded-md text-sm font-medium border border-emerald-600 hover:bg-emerald-700 text-emerald-100">Folha e Lâminas</button>
+                <button onclick="navigate('estudo')" id="nav-estudo" class="tab-btn px-4 py-2 rounded-md text-sm font-medium border border-emerald-600 hover:bg-emerald-700 text-emerald-100">Guia de Estudo</button>
+            </div>
+        </div>
+        <div class="md:hidden flex overflow-x-auto py-2 space-x-2 no-scrollbar">
+            <button onclick="navigate('epiderme')" id="nav-mobile-epiderme" class="tab-btn active px-3 py-1 rounded-md text-xs font-medium border border-emerald-600 whitespace-nowrap">Epiderme</button>
+            <button onclick="navigate('caule')" id="nav-mobile-caule" class="tab-btn px-3 py-1 rounded-md text-xs font-medium border border-emerald-600 whitespace-nowrap text-emerald-100">Caule</button>
+            <button onclick="navigate('folha')" id="nav-mobile-folha" class="tab-btn px-3 py-1 rounded-md text-xs font-medium border border-emerald-600 whitespace-nowrap text-emerald-100">Folha</button>
+            <button onclick="navigate('estudo')" id="nav-mobile-estudo" class="tab-btn px-3 py-1 rounded-md text-xs font-medium border border-emerald-600 whitespace-nowrap text-emerald-100">Estudo</button>
+        </div>
+    </div>
+</nav>
+
+<main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+    <section id="view-epiderme" class="view-section fade-in">
+        <div class="mb-8 border-l-4 border-emerald-500 pl-4">
+            <h1 class="text-3xl font-bold text-emerald-900 mb-2">Sistema de Revestimento: Epiderme e Anexos</h1>
+            <p class="text-lg text-stone-600">Explore as células epidérmicas, complexos estomáticos responsáveis pelas trocas gasosas e os tricomas protetores. Interaja com os modelos abaixo para identificar as estruturas morfológicas de uma folha de <i>Tradescantia</i> observada a fresco, onde pigmentos naturais já evidenciam as células.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-800 border-b pb-2">1. Epiderme e Estômatos</h2>
+                <p class="mb-4 text-sm text-stone-600">A <i>Tradescantia</i> é um modelo didático porque o vacúolo de suas células acumula antocianina (pigmento roxo). Observe a microscopia real e clique nas áreas do esquema abaixo para explorar o estômato tetracítico.</p>
+                
+                <div class="my-4 flex flex-col justify-center bg-stone-100 rounded-lg overflow-hidden text-center text-sm text-stone-500 border border-stone-200 shadow-sm">
+                    <img src="https://www.casadasciencias.org/storage/app/uploads/public/640/8e8/2eb/6408e82eb0172527659754.png" alt="Painel triplo: Planta Tradescantia e microscopia da epiderme" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Zebrina_stomata.jpg/640px-Zebrina_stomata.jpg';">
+                    <div class="p-3 bg-stone-200 text-stone-700 text-xs text-left">
+                        <b>🔍 Progressão de Aumento:</b> (Esq.) Visão macroscópica da planta; (Centro) Visão geral da epiderme com vários estômatos; (Dir.) Detalhe de um estômato tetracítico, com o ostíolo, células-guarda e células subsidiárias bem definidas pelo ponteiro.
+                    </div>
+                </div>
+
+                <div class="flex justify-center mb-6">
+                    <div class="stoma-container cursor-pointer" id="stoma-interactive" onclick="toggleStomaDetails()">
+                        <div class="subsidiary-cell" style="width: 140px; height: 160px;"></div>
+                        <div class="subsidiary-cell" style="width: 220px; height: 100px;"></div>
+                        <div class="guard-cell">
+                            <div class="ostiole"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="stoma-info" class="bg-stone-50 p-4 rounded-lg border border-stone-200 text-sm">
+                    <p class="font-semibold text-stone-800">Clique na estrutura acima para explorar.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h2 class="text-xl font-semibold mb-4 text-emerald-800 border-b pb-2">2. Tricomas Florais</h2>
+                <p class="mb-4 text-sm text-stone-600">Tricomas tectores multicelulares no filete da flor protegem estruturas reprodutivas. Eles lembram um "colar de contas".</p>
+                
+                <div class="my-4 flex justify-center bg-stone-100 rounded-lg overflow-hidden text-center text-sm text-stone-500 border border-stone-200 shadow-sm">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS4lq4sEBT0s0xagThrDk0_i1eRlXoIXuxrLw&s" alt="Microscopia de tricomas florais multicelulares de Tradescantia" class="w-full max-w-md h-auto object-cover hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/475569?text=Microscopia:+Tricomas+Florais';">
+                </div>
+
+                <div class="flex flex-col items-center justify-center space-y-2 py-8 bg-stone-100 rounded-lg border border-stone-200 mb-4 h-48">
+                    <div class="flex space-x-1">
+                        <div class="w-12 h-12 rounded-full bg-purple-200 border-2 border-purple-400 flex items-center justify-center animate-pulse"><div class="w-2 h-2 rounded-full bg-purple-800"></div></div>
+                        <div class="w-14 h-14 rounded-full bg-purple-200 border-2 border-purple-400 flex items-center justify-center animate-pulse" style="animation-delay: 0.2s"><div class="w-2 h-2 rounded-full bg-purple-800"></div></div>
+                        <div class="w-16 h-16 rounded-full bg-purple-200 border-2 border-purple-400 flex items-center justify-center animate-pulse" style="animation-delay: 0.4s"><div class="w-3 h-3 rounded-full bg-purple-800"></div></div>
+                        <div class="w-20 h-20 rounded-full bg-purple-200 border-2 border-purple-400 flex items-center justify-center animate-pulse" style="animation-delay: 0.6s"><div class="w-4 h-4 rounded-full bg-purple-800"></div></div>
+                    </div>
+                </div>
+                <ul class="text-sm text-stone-700 space-y-2">
+                    <li><span class="text-xl">🟣</span> <b>Formato:</b>São estruturas epidérmicas semelhantes a pelos (tectores ou glandulares).</li>
+                    <li><span class="text-xl">🔬</span> <b>Destaque:</b> Atuam na proteção contra estresse hídrico e herbivoria.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-caule" class="view-section hidden fade-in">
+        <div class="mb-8 border-l-4 border-emerald-500 pl-4">
+            <h1 class="text-3xl font-bold text-emerald-900 mb-2">Técnicas Histológicas e Anatomia do Caule</h1>
+            <p class="text-lg text-stone-600">Entenda o processo de confecção de lâminas semipermanentes utilizando cortes manuais e a técnica de coloração metacromática com Azul de Toluidina (ATD) para evidenciar diferentes paredes celulares no caule.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h2 class="text-lg font-semibold mb-4 text-emerald-800 border-b pb-2">Passo a Passo da Lâmina</h2>
+                <div class="space-y-4">
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-emerald-100 text-emerald-800 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                        <div>
+                            <h3 class="font-semibold text-sm">Corte Transversal</h3>
+                            <p class="text-xs text-stone-600">Cortes finos do caule (losna branca/picão preto) com lâmina de barbear molhada.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-emerald-100 text-emerald-800 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                        <div>
+                            <h3 class="font-semibold text-sm">Diafanização</h3>
+                            <p class="text-xs text-stone-600">2 min em Hipoclorito 20% para clarear os tecidos e remover o conteúdo celular.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-emerald-100 text-emerald-800 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                        <div>
+                            <h3 class="font-semibold text-sm">Lavagem</h3>
+                            <p class="text-xs text-stone-600">Interrupção da ação do hipoclorito com água limpa.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start">
+                        <div class="bg-emerald-100 text-emerald-800 w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
+                        <div>
+                            <h3 class="font-semibold text-sm">Coloração</h3>
+                            <p class="text-xs text-stone-600">3 min em Azul de Toluidina (ATD). O corante reage dependendo da composição da parede celular (Metacromasia).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-lg font-semibold text-emerald-800">Simulador de Metacromasia: Azul de Toluidina (ATD)</h2>
+                    <button onclick="applyDye('atd')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 rounded font-semibold transition">Pingar Corante ATD</button>
+                </div>
+                <p class="mb-4 text-sm text-stone-600">A metacromasia cria um contraste químico visual. Aplique o corante para ver como os tecidos reagem quimicamente e revelam sua composição estrutural primária ou secundária.</p>
+                
+                <div class="my-4 flex justify-center bg-stone-100 rounded-lg overflow-hidden text-center text-sm text-stone-500 border border-stone-200 shadow-sm">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Helianthus_stem_cross_section_1.jpg/640px-Helianthus_stem_cross_section_1.jpg" alt="Microscopia de corte transversal de caule com coloração" class="w-full max-w-md h-auto object-cover hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://www.researchgate.net/profile/Renata-Maria-Meira/publication/262742925/figure/fig2/AS:671528815427615@1537116354823/Figura-1-Cortes-transversais-da-raiz-de-Porophyllum-ruderale-em-que-a-e-b-corados.jpg';">
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 items-center">
+                    <div class="w-48 h-48 rounded-full bg-stone-100 border-4 border-stone-200 overflow-hidden flex flex-col relative" id="stem-cross-section">
+                        <div class="h-1/5 w-full bg-stone-200 transition-colors duration-700 cell-layer" data-tissue="epidermis"></div>
+                        <div class="h-2/5 w-full bg-stone-100 transition-colors duration-700 cell-layer" data-tissue="parenchyma"></div>
+                        <div class="absolute w-32 h-32 rounded-full border-[16px] border-stone-200 top-8 left-8 transition-colors duration-700 cell-layer flex items-center justify-center" data-tissue="sclerenchyma">
+                             <div class="w-16 h-16 rounded-full bg-stone-200 transition-colors duration-700 cell-layer" data-tissue="xylem"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 space-y-3">
+                        <div class="p-3 rounded border border-stone-200 flex items-center gap-3 bg-stone-50">
+                            <div id="legend-cellulose" class="w-6 h-6 rounded-full bg-stone-300 transition-colors duration-700"></div>
+                            <div>
+                                <h4 class="font-semibold text-sm">Paredes Celulósicas (Primárias)</h4>
+                                <p class="text-xs text-stone-600">Tecidos: Parênquima (preenchimento) e Colênquima.</p>
+                                <p class="text-xs font-medium text-purple-700 hidden" id="res-cellulose">Reação ATD: Tons Púrpura/Avermelhados.</p>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded border border-stone-200 flex items-center gap-3 bg-stone-50">
+                            <div id="legend-lignin" class="w-6 h-6 rounded-full bg-stone-300 transition-colors duration-700"></div>
+                            <div>
+                                <h4 class="font-semibold text-sm">Paredes Lignificadas (Secundárias)</h4>
+                                <p class="text-xs text-stone-600">Tecidos: Xilema (condução) e Esclerênquima (sustentação rígida).</p>
+                                <p class="text-xs font-medium text-cyan-700 hidden" id="res-lignin">Reação ATD: Tons Verde-Azulados.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-folha" class="view-section hidden fade-in">
+        <div class="mb-8 border-l-4 border-emerald-500 pl-4">
+            <h1 class="text-3xl font-bold text-emerald-900 mb-2">Anatomia Foliar e Dupla Coloração</h1>
+            <p class="text-lg text-stone-600">Observe as lâminas permanentes que utilizam a técnica de coloração dupla (Azul de Astra e Fucsina Básica) para fixação a longo prazo. Atenção: O padrão de cores gerado aqui é <b>inverso</b> ao do Azul de Toluidina.</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 mb-8">
+            <h2 class="text-lg font-semibold mb-4 text-emerald-800 border-b pb-2">Padrão Astra-Fucsina em Lâmina Permanente (Folha de <i>Iris</i>)</h2>
+            
+            <div class="my-4 flex justify-center bg-stone-100 rounded-lg overflow-hidden text-center text-sm text-stone-500 border border-stone-200 shadow-sm mb-6">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Syringa_leaf_cross_section.jpg/640px-Syringa_leaf_cross_section.jpg" alt="Microscopia de folha com coloração dupla" class="w-full max-w-md h-auto object-cover hover:scale-105 transition-transform duration-500" onerror="this.onerror=null; this.src='https://files.passeidireto.com/5b43e1bc-1ab0-444b-9750-1725210ecaa5/5b43e1bc-1ab0-444b-9750-1725210ecaa5.png';">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <p class="text-sm text-stone-600 mb-4">Esta técnica foca em destacar os feixes vasculares (nervuras) e o tecido de sustentação ao seu redor. Interaja com a legenda para identificar as calotas estruturais.</p>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 border-l-4 border-blue-500 bg-blue-50 rounded-r-md cursor-pointer hover:bg-blue-100 transition" onmouseover="highlightLeaf('primary')" onmouseout="resetLeaf()">
+                            <h3 class="font-bold text-blue-800">🔵 Azul de Astra</h3>
+                            <p class="text-sm text-blue-900">Cora paredes <b>primárias (celulósicas)</b> em tons de azul. Ex: Parênquima clorofiliano e Floema.</p>
+                        </div>
+                        <div class="p-4 border-l-4 border-red-500 bg-red-50 rounded-r-md cursor-pointer hover:bg-red-100 transition" onmouseover="highlightLeaf('secondary')" onmouseout="resetLeaf()">
+                            <h3 class="font-bold text-red-800">🔴 Fucsina Básica</h3>
+                            <p class="text-sm text-red-900">Cora paredes <b>secundárias (lignificadas)</b> em tons avermelhados intensos. Ex: Calotas de esclerênquima e Xilema.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center items-center bg-stone-100 rounded-lg border border-stone-200 p-4">
+                    <div class="relative w-full max-w-xs h-48 bg-blue-100 rounded-xl overflow-hidden shadow-inner flex items-center justify-center transition-all duration-300" id="leaf-tissue-primary">
+                        <div class="absolute inset-0 flex flex-col justify-between items-center py-2">
+                            <div class="w-24 h-8 bg-red-500 rounded-t-full shadow-md transition-all duration-300 opacity-90 leaf-tissue-secondary flex items-center justify-center text-xs text-white font-bold">Calota Superior</div>
+                            <div class="w-16 h-16 bg-blue-300 rounded-full flex flex-col items-center justify-center text-xs text-blue-900 font-bold border-2 border-white shadow-sm leaf-tissue-primary"><span>Floema</span><span class="text-red-900 bg-white px-1 mt-1 rounded leaf-tissue-secondary border border-red-200">Xilema</span></div>
+                            <div class="w-24 h-8 bg-red-500 rounded-b-full shadow-md transition-all duration-300 opacity-90 leaf-tissue-secondary flex items-center justify-center text-xs text-white font-bold">Calota Inferior</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-estudo" class="view-section hidden fade-in">
+        <div class="mb-8 border-l-4 border-emerald-500 pl-4">
+            <h1 class="text-3xl font-bold text-emerald-900 mb-2">Guia de Estudo e Resolução</h1>
+            <p class="text-lg text-stone-600">Revise os conceitos-chave, compreenda a distribuição dos biopolímeros nos tecidos vegetais e teste a retenção da anatomia funcional apresentada no roteiro prático.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col">
+                <h2 class="text-lg font-semibold mb-2 text-emerald-800 border-b pb-2">Perfil Bioquímico dos Tecidos</h2>
+                <p class="text-sm text-stone-600 mb-4">A eficácia dos corantes baseia-se na presença de Lignina ou Celulose. Observe as características comparativas dos três principais tecidos estruturais.</p>
+                <div class="chart-container flex-grow">
+                    <canvas id="tissueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                <h2 class="text-lg font-semibold mb-4 text-emerald-800 border-b pb-2">Revisão Interativa</h2>
+                <div class="space-y-3">
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-3 text-left font-semibold text-stone-800 bg-stone-50 hover:bg-stone-100 flex justify-between items-center" onclick="toggleFaq('faq1')">
+                            1. Por que usar corantes na anatomia vegetal?
+                            <span class="text-emerald-600 font-bold" id="icon-faq1">+</span>
+                        </button>
+                        <div class="px-4 py-3 text-sm text-stone-600 bg-white hidden" id="content-faq1">
+                            A maioria das células vegetais é translúcida sob o microscópio óptico. Corantes como o Azul de Toluidina criam <b>contraste químico</b>. Eles não apenas revelam os limites celulares, mas identificam imediatamente a composição da parede (ex: celulose vs. lignina), facilitando a dedução da função do tecido.
+                        </div>
+                    </div>
+                    
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-3 text-left font-semibold text-stone-800 bg-stone-50 hover:bg-stone-100 flex justify-between items-center" onclick="toggleFaq('faq2')">
+                            2. Estrutura do Estômato Tetracítico
+                            <span class="text-emerald-600 font-bold" id="icon-faq2">+</span>
+                        </button>
+                        <div class="px-4 py-3 text-sm text-stone-600 bg-white hidden" id="content-faq2">
+                            Composto por um par central de <b>células-guarda</b> reniformes (formato de rim) que delimitam o poro central (ostíolo). O diferencial do tipo tetracítico é a presença de exatamente <b>quatro células subsidiárias</b> circundando as células-guarda.
+                        </div>
+                    </div>
+
+                    <div class="border border-stone-200 rounded-lg overflow-hidden">
+                        <button class="w-full px-4 py-3 text-left font-semibold text-stone-800 bg-stone-50 hover:bg-stone-100 flex justify-between items-center" onclick="toggleFaq('faq3')">
+                            3. Xilema e Esclerênquima no Caule corado com ATD
+                            <span class="text-emerald-600 font-bold" id="icon-faq3">+</span>
+                        </button>
+                        <div class="px-4 py-3 text-sm text-stone-600 bg-white hidden" id="content-faq3">
+                            Apresentam forte coloração <b>verde-azulada</b> devido à reação da Lignina. O xilema tem a função primária de conduzir água e sais minerais. O esclerênquima fornece sustentação mecânica rígida, ajudando a manter o caule ereto. Ambos possuem paredes celulares secundárias espessas.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+    let chartInstance = null;
+    const views = ['epiderme', 'caule', 'folha', 'estudo'];
+
+    function navigate(viewId) {
+        views.forEach(v => {
+            document.getElementById(`view-${v}`).classList.add('hidden');
+            const btnDesktop = document.getElementById(`nav-${v}`);
+            const btnMobile = document.getElementById(`nav-mobile-${v}`);
+            
+            if(btnDesktop) {
+                btnDesktop.classList.remove('active', 'text-white');
+                btnDesktop.classList.add('text-emerald-100');
+            }
+            if(btnMobile) {
+                btnMobile.classList.remove('active', 'text-white');
+                btnMobile.classList.add('text-emerald-100');
+            }
+        });
+
+        document.getElementById(`view-${viewId}`).classList.remove('hidden');
+        
+        const activeDesktop = document.getElementById(`nav-${viewId}`);
+        const activeMobile = document.getElementById(`nav-mobile-${viewId}`);
+        
+        if(activeDesktop) {
+            activeDesktop.classList.add('active', 'text-white');
+            activeDesktop.classList.remove('text-emerald-100');
+        }
+        if(activeMobile) {
+            activeMobile.classList.add('active', 'text-white');
+            activeMobile.classList.remove('text-emerald-100');
+        }
+
+        if(viewId === 'estudo') {
+            initChart();
+        }
+    }
+
+    let stomaState = 0;
+    function toggleStomaDetails() {
+        const info = document.getElementById('stoma-info');
+        stomaState = (stomaState + 1) % 3;
+        
+        if(stomaState === 1) {
+            info.innerHTML = '<p class="text-green-700 font-semibold">Células-Guarda (Verde escuro):</p><p>Estruturas em formato de rim que controlam a abertura e fechamento do poro central (ostíolo).</p>';
+        } else if (stomaState === 2) {
+            info.innerHTML = '<p class="text-green-600 font-semibold">Células Subsidiárias (Verde claro):</p><p>No tipo tetracítico, são quatro células que circundam as células-guarda, auxiliando na regulação osmótica do complexo.</p>';
+        } else {
+            info.innerHTML = '<p class="font-semibold text-stone-800">Clique na estrutura acima para explorar.</p>';
+        }
+    }
+
+    function applyDye(type) {
+        if(type === 'atd') {
+            const layers = document.querySelectorAll('.cell-layer');
+            layers.forEach(layer => {
+                const tissue = layer.getAttribute('data-tissue');
+                if(tissue === 'epidermis' || tissue === 'parenchyma') {
+                    layer.classList.remove('bg-stone-100', 'bg-stone-200');
+                    layer.style.backgroundColor = '#9333ea'; 
+                } else if(tissue === 'xylem' || tissue === 'sclerenchyma') {
+                    layer.classList.remove('bg-stone-100', 'bg-stone-200');
+                    if(layer.classList.contains('border-[16px]')) {
+                         layer.style.borderColor = '#0891b2'; 
+                         layer.style.backgroundColor = 'transparent';
+                    } else {
+                        layer.style.backgroundColor = '#0891b2'; 
+                    }
+                }
+            });
+            document.getElementById('legend-cellulose').style.backgroundColor = '#9333ea';
+            document.getElementById('legend-lignin').style.backgroundColor = '#0891b2';
+            document.getElementById('res-cellulose').classList.remove('hidden');
+            document.getElementById('res-lignin').classList.remove('hidden');
+        }
+    }
+
+    function highlightLeaf(type) {
+        const primaryElems = document.querySelectorAll('.leaf-tissue-primary');
+        const secondaryElems = document.querySelectorAll('.leaf-tissue-secondary');
+        
+        if(type === 'primary') {
+            primaryElems.forEach(el => el.style.transform = 'scale(1.05)');
+            primaryElems.forEach(el => el.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.6)');
+            secondaryElems.forEach(el => el.style.opacity = '0.4');
+        } else {
+            secondaryElems.forEach(el => el.style.transform = 'scale(1.1)');
+            secondaryElems.forEach(el => el.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.6)');
+            primaryElems.forEach(el => el.style.opacity = '0.4');
+        }
+    }
+
+    function resetLeaf() {
+        const allElems = document.querySelectorAll('.leaf-tissue-primary, .leaf-tissue-secondary');
+        allElems.forEach(el => {
+            el.style.transform = 'scale(1)';
+            el.style.opacity = '1';
+            el.style.boxShadow = 'none';
+        });
+        document.querySelectorAll('.leaf-tissue-secondary').forEach(el => el.style.opacity = '0.9');
+    }
+
+    function toggleFaq(id) {
+        const content = document.getElementById(`content-${id}`);
+        const icon = document.getElementById(`icon-${id}`);
+        if(content.classList.contains('hidden')) {
+            content.classList.remove('hidden');
+            icon.innerText = '-';
+        } else {
+            content.classList.add('hidden');
+            icon.innerText = '+';
+        }
+    }
+
+    function initChart() {
+        const ctx = document.getElementById('tissueChart');
+        if(!ctx) return;
+        
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const data = {
+            labels: ['Celulose (Primária)', 'Lignina (Secundária)', 'Volume Celular/Lúmen', 'Função de Sustentação'],
+            datasets: [{
+                label: 'Parênquima',
+                data: [90, 0, 95, 20],
+                fill: true,
+                backgroundColor: 'rgba(147, 51, 234, 0.2)',
+                borderColor: 'rgb(147, 51, 234)',
+                pointBackgroundColor: 'rgb(147, 51, 234)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(147, 51, 234)'
+            }, {
+                label: 'Esclerênquima',
+                data: [10, 95, 10, 100],
+                fill: true,
+                backgroundColor: 'rgba(8, 145, 178, 0.2)',
+                borderColor: 'rgb(8, 145, 178)',
+                pointBackgroundColor: 'rgb(8, 145, 178)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgb(8, 145, 178)'
+            }]
+        };
+
+        const config = {
+            type: 'radar',
+            data: data,
+            options: {
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.formattedValue + '% relativo';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                        grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                        pointLabels: { font: { size: 12, family: 'Inter' }, color: '#475569' },
+                        ticks: { display: false, min: 0, max: 100 }
+                    }
+                }
+            }
+        };
+
+        chartInstance = new Chart(ctx, config);
+    }
+</script>
+</body>
+</html>
